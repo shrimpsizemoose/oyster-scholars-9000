@@ -1,8 +1,8 @@
 package utils
 
-func MangleToken(token string) string {
-	if len(token) <= 20 {
+func MaskToken(token string) string {
+	if len(token) <= 15 {
 		return token
 	}
-	return token[:10] + "..." + token[len(token)-10:]
+	return token[:8] + "..." + token[len(token)-7:]
 }

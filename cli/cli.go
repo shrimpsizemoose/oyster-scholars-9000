@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"flag"
 	"fmt"
 	"strings"
 
@@ -29,5 +30,9 @@ func ConfirmAction(message string) bool {
 }
 
 func SetupUsage(usageMessage string) {
-	fmt.Println(usageMessage)
+	flag.Usage = func() {
+		fmt.Println(usageMessage)
+		flag.PrintDefaults()
+	}
+	flag.Parse()
 }
