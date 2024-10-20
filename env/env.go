@@ -17,9 +17,14 @@ func LoadEnv() {
 	_ = godotenv.Load()
 }
 
-func GetEnvOrDefault(key, defaultValue string) string {
+// GetEnvOrDefault("PORT", "8000, "использую порт по умолчанию")
+// -> "PORT не задан, использую порт по умолчанию: 8000"
+func GetEnvOrDefault(key, defaultValue string, defaultComment string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value
+	}
+	if defaultComment != "" {
+		logger.Warn.Printf("%s не задан, %s: %s", key, defaultComment, defaultValue)
 	}
 	return defaultValue
 }
