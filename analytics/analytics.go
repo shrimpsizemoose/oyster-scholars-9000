@@ -17,25 +17,26 @@ type Tracker interface {
 	PingFinish()
 }
 
-type Analytics struct {
+type Config struct {
 	BaseURL       string
 	SkipTLS       bool
 	CommonData    map[string]string
 	SecretHeaders map[string]string
 }
 
-func NewAnalytics(baseURL string, skipTLS bool, commonData, secretHeaders map[string]string) Tracker {
+type Analytics struct {
+	config Config
+}
+
+func NewAnalytics(config Config) Tracker {
 	return &Analytics{
-		BaseURL:       baseURL,
-		SkipTLS:       skipTLS,
-		CommonData:    commonData,
-		SecretHeaders: secretHeaders,
+		config: config,
 	}
 }
 
 func (a *Analytics) sendEvent(eventType string, additionalData map[string]string) error {
 	data := make(map[string]string)
-	for k, v := range a.CommonData {
+	for k, v := range a.config.CommonData {
 		data[k] = v
 	}
 	for k, v := range additionalData {
@@ -50,14 +51,14 @@ func (a *Analytics) sendEvent(eventType string, additionalData map[string]string
 	}
 
 	http.DefaultClient.Timeout = 2 * time.Second
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: a.SkipTLS}
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: a.config.SkipTLS}
 
-	req, err := http.NewRequest("POST", a.BaseURL, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", a.config.BaseURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return fmt.Errorf("error creating request: %w", err)
 	}
 
-	for k, v := range a.SecretHeaders {
+	for k, v := range a.config.SecretHeaders {
 		req.Header.Set(k, v)
 	}
 
