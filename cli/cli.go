@@ -24,7 +24,7 @@ func ConfirmAction(message string) bool {
 	case "n", "no", "н", "нет":
 		return false
 	default:
-		fmt.Println("Я могу понять, только если ввести y/n/yes/no/д/н/да/нет, вот такой я дурачок.")
+		logger.Warn.Println("Я могу понять, только если ввести y/n/yes/no/д/н/да/нет, вот такой я дурачок.")
 		return ConfirmAction(message)
 	}
 }

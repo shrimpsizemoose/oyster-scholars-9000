@@ -54,7 +54,7 @@ func (a *Analytics) sendEvent(eventType string, additionalData map[string]string
 		return fmt.Errorf("error marshaling JSON: %w", err)
 	}
 
-	http.DefaultClient.Timeout = 2 * time.Second
+	http.DefaultClient.Timeout = 3 * time.Second
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: a.config.SkipTLS}
 
 	req, err := http.NewRequest("POST", a.config.BaseURL, bytes.NewBuffer(jsonData))
@@ -69,27 +69,24 @@ func (a *Analytics) sendEvent(eventType string, additionalData map[string]string
 	client := &http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Error.Fatalf("Что-то не так с аналитикой: я не смог тебя посчитать. Надо проверить сеть, а если не поможет -- напиши координатору пжлст и приложи скриншот. Спасибо 🐳.")
-		logger.Warn.Println("Чтобы получить более подробное сообщение об ошибке, запусти с TREKKER_VERBOSE=da")
 		if a.verbose {
-			return err
+			logger.Error.Println(err)
 		}
+		return fmt.Errorf("Что-то не так с аналитикой: я не смог тебя посчитать. Надо проверить сеть, а если не поможет -- напиши координатору пжлст и приложи скриншот. Спасибо 🐳.")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		logger.Error.Fatalf("Неправильное сочетание студента-токена, перепроверь что всё вводишь правильно. Ожидал статус 200 OK, получил - %s", resp.Status)
-		logger.Warn.Println("Чтобы получить чуть больше информации об ошибке, запусти меня ещё раз с TREKKER_VERBOSE=da")
 		if a.verbose {
 			logger.Error.Println(resp)
 		}
+		return fmt.Errorf("Неправильное сочетание студента-токена, перепроверь что всё вводишь правильно. Ожидал статус 200 OK, получил - %s", resp.Status)
 	}
 	if resp.StatusCode != http.StatusOK {
-		logger.Error.Fatalf("Ой. Я пытался тебя посчитать, но не смог убедиться что всё ок. Надо проверить сеть, а если не поможет -- напиши координатору пжлст и приложи скриншот. Я ожидал статус 200 OK, получил - %s", resp.Status)
-		logger.Warn.Println("Чтобы получить чуть больше информации об ошибке, запусти меня ещё раз с TREKKER_VERBOSE=da")
 		if a.verbose {
 			logger.Error.Println(resp)
 		}
+		return fmt.Errorf("Ой. Я пытался тебя посчитать, но не смог убедиться что всё ок. Надо проверить сеть, а если не поможет -- напиши координатору пжлст и приложи скриншот. Я ожидал статус 200 OK, получил - %s", resp.Status)
 	}
 
 	return nil
@@ -97,11 +94,14 @@ func (a *Analytics) sendEvent(eventType string, additionalData map[string]string
 
 func (a *Analytics) Ping(eventType string, additionalData map[string]string) {
 	err := a.sendEvent(eventType, additionalData)
-	if err != nil {
-		logger.Error.Fatalf("Failed to send analytics: %v", err)
-	}
 	if a.verbose {
 		logger.Warn.Printf("Аналитика: event %s", eventType)
+	}
+	if err != nil {
+		if !a.verbose {
+			logger.Warn.Println("Чтобы получить чуть больше информации об ошибке, запусти меня ещё раз с TREKKER_VERBOSE=da")
+		}
+		logger.Error.Fatalf("Failed to send analytics: %v", err)
 	}
 }
 
